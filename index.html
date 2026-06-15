@@ -216,16 +216,6 @@ table.pt td:not(:first-child):not(:nth-child(2)),table.pt th:not(:first-child):n
 .feat-title{color:#e2e8f0;font-size:14px;font-weight:600;margin-bottom:7px}
 .feat-desc{color:var(--slate-500);font-size:12px;line-height:1.7}
 
-/* ── SIGN IN ── */
-#screen-signin{background:var(--slate-900);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}
-.auth-card{background:#fff;border-radius:16px;padding:36px 32px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
-.auth-logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:28px}
-.auth-title{font-size:20px;font-weight:700;text-align:center;margin-bottom:4px}
-.auth-sub{font-size:13px;color:var(--slate-500);text-align:center;margin-bottom:24px}
-.auth-divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--slate-400);font-size:12px}
-.auth-divider::before,.auth-divider::after{content:'';flex:1;border-top:1px solid var(--slate-200)}
-.auth-footer{text-align:center;font-size:12px;color:var(--slate-500);margin-top:18px}
-.auth-link{color:var(--orange);cursor:pointer;font-weight:600;border:none;background:none;font-family:inherit;font-size:12px}
 
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -235,15 +225,15 @@ table.pt td:not(:first-child):not(:nth-child(2)),table.pt th:not(:first-child):n
 <body>
 
 <!-- ═══════════ LANDING ═══════════ -->
-<div id="screen-landing" class="screen active">
+<div id="screen-landing" class="screen">
   <nav class="land-nav">
     <div class="land-logo">
       <div class="land-logo-mark">🧊</div>
       <span class="land-logo-text">Spray Foam Estimator AI</span>
     </div>
     <div style="display:flex;gap:10px">
-      <button class="btn btn-ghost" onclick="go('signin')">Sign In</button>
-      <button class="btn btn-primary" onclick="go('signin')">Get Started Free</button>
+      <button class="btn btn-ghost" onclick="go('dashboard')">Sign In</button>
+      <button class="btn btn-primary" onclick="go('dashboard')">Get Started Free</button>
     </div>
   </nav>
 
@@ -252,8 +242,8 @@ table.pt td:not(:first-child):not(:nth-child(2)),table.pt th:not(:first-child):n
     <h1 class="hero-h1">Upload Plans.<br><span>Get Estimates in Minutes.</span></h1>
     <p class="hero-p">AI reads your blueprints, extracts every dimension, and calculates exact board feet, R-values, and material costs — automatically.</p>
     <div class="hero-btns">
-      <button class="btn btn-primary btn-lg" onclick="go('signin')">Start Estimating Free →</button>
-      <button class="btn btn-ghost btn-lg" onclick="go('signin')">Sign In</button>
+      <button class="btn btn-primary btn-lg" onclick="go('dashboard')">Start Estimating Free →</button>
+      <button class="btn btn-ghost btn-lg" onclick="go('dashboard')">Sign In</button>
     </div>
   </div>
 
@@ -268,55 +258,10 @@ table.pt td:not(:first-child):not(:nth-child(2)),table.pt th:not(:first-child):n
 </div>
 
 
-<!-- ═══════════ SIGN IN ═══════════ -->
-<div id="screen-signin" class="screen">
-  <div style="background:var(--slate-900);flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px">
-    <div class="auth-card">
-      <div class="auth-logo">
-        <div style="width:32px;height:32px;background:var(--orange);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px">🧊</div>
-        <span style="font-size:14px;font-weight:700;color:var(--slate-800)">Spray Foam Estimator AI</span>
-      </div>
-      <div class="auth-title">Welcome back</div>
-      <div class="auth-sub">Sign in to your account</div>
-
-      <div class="form-group"><label class="form-label">Email address</label><input class="form-input" type="email" placeholder="you@company.com"></div>
-      <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" placeholder="••••••••"></div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px" onclick="go('dashboard')">Sign In →</button>
-
-      <div class="auth-divider">or</div>
-      <button class="btn btn-outline" style="width:100%;justify-content:center;padding:10px">Continue with Google</button>
-      <div class="auth-footer">No account? <button class="auth-link" onclick="go('signup')">Create one free</button></div>
-    </div>
-  </div>
-</div>
-
-
-<!-- ═══════════ SIGN UP ═══════════ -->
-<div id="screen-signup" class="screen">
-  <div style="background:var(--slate-900);flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px">
-    <div class="auth-card">
-      <div class="auth-logo">
-        <div style="width:32px;height:32px;background:var(--orange);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px">🧊</div>
-        <span style="font-size:14px;font-weight:700;color:var(--slate-800)">Spray Foam Estimator AI</span>
-      </div>
-      <div class="auth-title">Create your account</div>
-      <div class="auth-sub">Free to get started — no credit card needed</div>
-
-      <div class="form-group"><label class="form-label">Full name</label><input class="form-input" type="text" placeholder="John Smith"></div>
-      <div class="form-group"><label class="form-label">Email address</label><input class="form-input" type="email" placeholder="you@company.com"></div>
-      <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" placeholder="••••••••"></div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px" onclick="go('dashboard')">Create Account →</button>
-
-      <div class="auth-divider">or</div>
-      <button class="btn btn-outline" style="width:100%;justify-content:center;padding:10px">Continue with Google</button>
-      <div class="auth-footer">Already have an account? <button class="auth-link" onclick="go('signin')">Sign in</button></div>
-    </div>
-  </div>
-</div>
 
 
 <!-- ═══════════ DASHBOARD ═══════════ -->
-<div id="screen-dashboard" class="screen">
+<div id="screen-dashboard" class="screen active">
   <div class="app-shell">
     <nav class="sidebar">
       <div class="sidebar-logo">
@@ -501,18 +446,15 @@ table.pt td:not(:first-child):not(:nth-child(2)),table.pt th:not(:first-child):n
           <div style="max-width:540px">
             <div style="font-size:16px;font-weight:700;margin-bottom:4px">Upload Building Plans</div>
             <div style="font-size:13px;color:var(--slate-500);margin-bottom:18px">Upload PDFs, blueprints, or floor plan images. Claude AI will extract all dimensions automatically.</div>
-            <div class="upload-zone">
+            <input type="file" id="file-input" multiple accept=".pdf,.png,.jpg,.jpeg,.tiff,.tif,.webp" style="display:none" onchange="handleFiles(this.files)">
+            <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
               <div class="upload-icon">☁️</div>
               <div class="upload-title">Drag & drop your plans here</div>
               <div class="upload-sub">PDF, PNG, JPG, TIFF · Up to 50MB per file</div>
-              <button class="btn btn-primary btn-sm">Browse Files</button>
+              <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();document.getElementById('file-input').click()">Browse Files</button>
             </div>
-            <div class="file-item ok">
-              <span style="font-size:24px">📕</span>
-              <div class="file-info"><div class="file-name">819_Glen_Drive_091422.pdf</div><div class="file-size">4.7 MB · 12 pages</div></div>
-              <span class="file-status">✓ Uploaded</span>
-            </div>
-            <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:10px;font-size:14px;padding:11px" onclick="go('analyzing')">Analyze 1 Plan with AI →</button>
+            <div id="file-list"></div>
+            <button id="analyze-btn" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:10px;font-size:14px;padding:11px;display:none" onclick="go('analyzing')">Analyze Plans with AI →</button>
           </div>
         </div>
       </div>
@@ -812,6 +754,37 @@ function go(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + id).classList.add('active');
   window.scrollTo(0, 0);
+}
+
+// ── DRAG & DROP ──
+const zone = document.getElementById('drop-zone');
+if (zone) {
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor='var(--orange)'; zone.style.background='rgba(255,107,43,.05)'; });
+  zone.addEventListener('dragleave', () => { zone.style.borderColor=''; zone.style.background=''; });
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.style.borderColor=''; zone.style.background='';
+    handleFiles(e.dataTransfer.files);
+  });
+}
+
+function handleFiles(files) {
+  const list = document.getElementById('file-list');
+  const btn  = document.getElementById('analyze-btn');
+  if (!list || !files.length) return;
+  list.innerHTML = '';
+  let count = 0;
+  Array.from(files).forEach(f => {
+    const mb = (f.size / 1048576).toFixed(1);
+    const icon = f.name.endsWith('.pdf') ? '📕' : '🖼️';
+    const div = document.createElement('div');
+    div.className = 'file-item ok';
+    div.innerHTML = `<span style="font-size:24px">${icon}</span><div class="file-info"><div class="file-name">${f.name}</div><div class="file-size">${mb} MB</div></div><span class="file-status">✓ Ready</span>`;
+    list.appendChild(div);
+    count++;
+  });
+  btn.style.display = 'flex';
+  btn.textContent = `Analyze ${count} Plan${count > 1 ? 's' : ''} with AI →`;
 }
 </script>
 </body>
