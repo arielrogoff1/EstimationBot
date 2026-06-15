@@ -1,0 +1,238 @@
+"use client";
+
+import { useState } from "react";
+import type { Measurement } from "@prisma/client";
+import type { FoamSettings } from "@/lib/calculations";
+import { calcRequiredThickness, calcBoardFeet } from "@/lib/calculations";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+
+const AREA_TYPES = [
+  "EXTERIOR_WALL",
+  "INTERIOR_WALL",
+  "ROOF",
+  "ATTIC_FLOOR",
+  "CATHEDRAL_CEILING",
+  "CRAWL_SPACE",
+  "RIM_JOIST",
+  "FOUNDATION_WALL",
+  "GARAGE_WALL",
+  "FLOOR_ASSEMBLY",
+];
+
+const AREA_TYPE_LABELS: Record<string, string> = {
+  EXTERIOR_WALL: "Exterior Wall",
+  INTERIOR_WALL: "Interior Wall",
+  ROOF: "Roof",
+  ATTIC_FLOOR: "Attic Floor",
+  CATHEDRAL_CEILING: "Cathedral Ceiling",
+  CRAWL_SPACE: "Crawl Space",
+  RIM_JOIST: "Rim Joist",
+  FOUNDATION_WALL: "Foundation Wall",
+  GARAGE_WALL: "Garage Wall",
+  FLOOR_ASSEMBLY: "Floor Assembly",
+};
+
+interface Props {
+  measurement: Measurement;
+  foamSettings: FoamSettings;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+export default function MeasurementEditDialog({ measurement, foamSettings, onClose, onSaved }: Props) {
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    label: measurement.label,
+    floor: measurement.floor,
+    areaType: measurement.areaType,
+    length: measurement.length?.toString() ?? "",
+    height: measurement.height?.toString() ?? "",
+    windowArea: measurement.windowArea.toString(),
+    doorArea: measurement.doorArea.toString(),
+    foamType: measurement.foamType,
+    desiredRValue: measurement.desiredRValue.toString(),
+  });
+
+  // Live calc preview
+  const length = parseFloat(form.length) || 0;
+  const height = parseFloat(form.height) || 0;
+  const windowArea = parseFloat(form.windowArea) || 0;
+  const doorArea = parseFloat(form.doorArea) || 0;
+  const rValue = parseFloat(form.desiredRValue) || 21;
+  const rPerInch =
+    form.foamType === "CLOSED_CELL"
+      ? foamSettings.closedCellRPerInch
+      : foamSettings.openCellRPerInch;
+  const grossArea = length && height ? length * height : 0;
+  const netArea = Math.max(0, grossArea - windowArea - doorArea);
+  const thickness = calcRequiredThickness(rValue, rPerInch);
+  const boardFeet = calcBoardFeet(netArea, thickness);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await fetch(`/api/measurements/${measurement.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          label: form.label,
+          floor: form.floor,
+          areaType: form.areaType,
+          length: parseFloat(form.length) || null,
+          height: parseFloat(form.height) || null,
+          windowArea: parseFloat(form.windowArea) || 0,
+          doorArea: parseFloat(form.doorArea) || 0,
+          foamType: form.foamType,
+          desiredRValue: parseFloat(form.desiredRValue) || 21,
+        }),
+      });
+      onSaved();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Edit Measurement</DialogTitle>
+        </DialogHeader>
+
+        <div className="grid grid-cols-2 gap-4 py-2">
+          <div className="col-span-2">
+            <label className="block text-xs font-medium text-slate-600 mb-1">Label</label>
+            <input
+              value={form.label}
+              onChange={(e) => setForm({ ...form, label: e.target.value })}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-foam-orange"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Floor</label>
+            <input
+              value={form.floor}
+              onChange={(e) => setForm({ ...form, floor: e.target.value })}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-foam-orange"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Area Type</label>
+            <select
+              value={form.areaType}
+              onChange={(e) => setForm({ ...form, areaType: e.target.value })}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-foam-orange"
+            >
+              {AREA_TYPES.map((t) => (
+                <option key={t} value={t}>{AREA_TYPE_LABELS[t]}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Length (ft)</label>
+            <input
+              type="number"
+              step="0.1"
+              value={form.length}
+              onChange={(e) => setForm({ ...form, length: e.target.value })}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-foam-orange"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Height (ft)</label>
+            <input
+              type="number"
+              step="0.1"
+              value={form.height}
+              onChange={(e) => setForm({ ...form, height: e.target.value })}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-foam-orange"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Window Area (sf)</label>
+            <input
+              type="number"
+              step="0.1"
+              value={form.windowArea}
+              onChange={(e) => setForm({ ...form, windowArea: e.target.value })}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-foam-orange"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Door Area (sf)</label>
+            <input
+              type="number"
+              step="0.1"
+              value={form.doorArea}
+              onChange={(e) => setForm({ ...form, doorArea: e.target.value })}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-foam-orange"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Foam Type</label>
+            <select
+              value={form.foamType}
+              onChange={(e) => setForm({ ...form, foamType: e.target.value as "OPEN_CELL" | "CLOSED_CELL" })}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-foam-orange"
+            >
+              <option value="CLOSED_CELL">Closed Cell (R-6.5/in)</option>
+              <option value="OPEN_CELL">Open Cell (R-3.7/in)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Desired R-Value</label>
+            <input
+              type="number"
+              step="1"
+              value={form.desiredRValue}
+              onChange={(e) => setForm({ ...form, desiredRValue: e.target.value })}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-foam-orange"
+            />
+          </div>
+        </div>
+
+        {/* Live calc */}
+        {netArea > 0 && (
+          <div className="bg-slate-50 rounded-lg p-3 grid grid-cols-3 gap-3 text-center text-sm border border-slate-200">
+            <div>
+              <div className="font-semibold text-slate-900">{netArea.toFixed(0)} sf</div>
+              <div className="text-xs text-slate-500">Net Area</div>
+            </div>
+            <div>
+              <div className="font-semibold text-slate-900">{thickness.toFixed(2)}″</div>
+              <div className="text-xs text-slate-500">Thickness</div>
+            </div>
+            <div>
+              <div className="font-semibold text-foam-orange">{boardFeet.toFixed(0)} BF</div>
+              <div className="text-xs text-slate-500">Board Feet</div>
+            </div>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+            Save Changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

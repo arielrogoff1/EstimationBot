@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  address     String?
+  builder     String?
+  userId      String
+  status      ProjectStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  planFiles    PlanFile[]
+  measurements Measurement[]
+  totals       BuildingTotals?
+  proposal     Proposal?
+
+  @@index([userId])
+}
+
+enum ProjectStatus {
+  PENDING
+  UPLOADING
+  ANALYZING
+  COMPLETE
+  ERROR
+}
+
+model PlanFile {
+  id        String      @id @default(cuid())
+  projectId String
+  filename  String
+  s3Key     String
+  s3Url     String
+  fileType  String
+  pageCount Int         @default(1)
+  sizeBytes Int
+  status    FileStatus  @default(UPLOADING)
+  createdAt DateTime    @default(now())
+
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  analyses Analysis[]
+
+  @@index([projectId])
+}
+
+enum FileStatus {
+  UPLOADING
+  PROCESSING
+  COMPLETE
+  ERROR
+}
+
+model Analysis {
+  id            String   @id @default(cuid())
+  planFileId    String
+  pageNumber    Int      @default(1)
+  rawResponse   Json
+  extractedData Json
+  confidence    Float    @default(0)
+  modelUsed     String   @default("claude-sonnet-4-6")
+  createdAt     DateTime @default(now())
+
+  planFile PlanFile @relation(fields: [planFileId], references: [id], onDelete: Cascade)
+
+  @@index([planFileId])
+}
+
+model Measurement {
+  id               String      @id @default(cuid())
+  projectId        String
+  floor            String      @default("Main Floor")
+  areaType         AreaType
+  label            String
+  length           Float?
+  height           Float?
+  grossArea        Float?
+  windowArea       Float       @default(0)
+  doorArea         Float       @default(0)
+  netArea          Float?
+  pitch            Float?
+  foamType         FoamType    @default(CLOSED_CELL)
+  desiredRValue    Float       @default(21)
+  requiredThickness Float?
+  boardFeet        Float?
+  confidence       Float       @default(1.0)
+  needsReview      Boolean     @default(false)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+enum AreaType {
+  EXTERIOR_WALL
+  INTERIOR_WALL
+  ROOF
+  ATTIC_FLOOR
+  CATHEDRAL_CEILING
+  CRAWL_SPACE
+  RIM_JOIST
+  FOUNDATION_WALL
+  GARAGE_WALL
+  FLOOR_ASSEMBLY
+}
+
+enum FoamType {
+  OPEN_CELL
+  CLOSED_CELL
+}
+
+model BuildingTotals {
+  id             String   @id @default(cuid())
+  projectId      String   @unique
+  totalWallArea  Float    @default(0)
+  totalRoofArea  Float    @default(0)
+  totalFloorArea Float    @default(0)
+  volume         Float    @default(0)
+  totalBoardFeet Float    @default(0)
+  totalCost      Float    @default(0)
+  updatedAt      DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Proposal {
+  id          String   @id @default(cuid())
+  projectId   String   @unique
+  pdfS3Key    String?
+  pdfUrl      String?
+  totalCost   Float    @default(0)
+  laborCost   Float    @default(0)
+  materialCost Float   @default(0)
+  sellPrice   Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Settings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  label     String
+  category  String   @default("general")
+  updatedAt DateTime @updatedAt
+}
