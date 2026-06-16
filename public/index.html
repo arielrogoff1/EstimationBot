@@ -234,7 +234,8 @@ async function analyze() {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `API error ${res.status}`);
+      const msg = err?.error?.message || err?.error?.type || JSON.stringify(err?.error || err) || `API error ${res.status}`;
+      throw new Error(msg);
     }
 
     const data   = await res.json();

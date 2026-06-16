@@ -55,28 +55,44 @@ while ($listener.IsListening) {
 
         # --- Proxy /api/analyze → Anthropic ---
         elseif ($req.HttpMethod -eq "POST" -and $req.Url.LocalPath -eq "/api/analyze") {
-            $reader = New-Object System.IO.StreamReader($req.InputStream, [System.Text.Encoding]::UTF8)
-            $body = $reader.ReadToEnd()
+            $reader    = New-Object System.IO.StreamReader($req.InputStream, [System.Text.Encoding]::UTF8)
+            $body      = $reader.ReadToEnd()
+            $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
 
-            $wc = New-Object System.Net.WebClient
-            $wc.Encoding = [System.Text.Encoding]::UTF8
-            $wc.Headers["Content-Type"]      = "application/json"
-            $wc.Headers["x-api-key"]         = $apiKey
-            $wc.Headers["anthropic-version"] = "2023-06-01"
+            $httpReq = [System.Net.HttpWebRequest]::Create("https://api.anthropic.com/v1/messages")
+            $httpReq.Method          = "POST"
+            $httpReq.ContentType     = "application/json"
+            $httpReq.ContentLength   = $bodyBytes.Length
+            $httpReq.Timeout         = 180000   # 3 minutes
+            $httpReq.ReadWriteTimeout = 180000
+            $httpReq.Headers.Add("x-api-key", $apiKey)
+            $httpReq.Headers.Add("anthropic-version", "2023-06-01")
+
+            $reqStream = $httpReq.GetRequestStream()
+            $reqStream.Write($bodyBytes, 0, $bodyBytes.Length)
+            $reqStream.Close()
 
             try {
-                $response = $wc.UploadString("https://api.anthropic.com/v1/messages", "POST", $body)
+                $httpResp   = $httpReq.GetResponse()
+                $respReader = New-Object System.IO.StreamReader($httpResp.GetResponseStream(), [System.Text.Encoding]::UTF8)
+                $response   = $respReader.ReadToEnd()
                 $bytes = [System.Text.Encoding]::UTF8.GetBytes($response)
                 $res.ContentType = "application/json"
                 $res.ContentLength64 = $bytes.Length
                 $res.OutputStream.Write($bytes, 0, $bytes.Length)
+                Write-Host "  OK — $(($body | ConvertFrom-Json).messages[0].content[-1].text.Substring(0,40))..." -ForegroundColor Green
             }
             catch [System.Net.WebException] {
-                $errStream = $_.Exception.Response.GetResponseStream()
-                $errReader = New-Object System.IO.StreamReader($errStream)
-                $errBody = $errReader.ReadToEnd()
+                $statusCode = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 500 }
+                $errBody    = if ($_.Exception.Response) {
+                    $er = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream(), [System.Text.Encoding]::UTF8)
+                    $er.ReadToEnd()
+                } else {
+                    '{"error":{"message":"' + $_.Exception.Message + '"}}'
+                }
+                Write-Host "  API ERROR $statusCode`: $errBody" -ForegroundColor Red
                 $bytes = [System.Text.Encoding]::UTF8.GetBytes($errBody)
-                $res.StatusCode = [int]$_.Exception.Response.StatusCode
+                $res.StatusCode = $statusCode
                 $res.ContentType = "application/json"
                 $res.ContentLength64 = $bytes.Length
                 $res.OutputStream.Write($bytes, 0, $bytes.Length)
