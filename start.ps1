@@ -1,12 +1,14 @@
 # Spray Foam Estimator AI — Local Server
 # Double-click this file to start the app
 
-# Read API key from .env
+# Read API key — checks .env.local first, then .env
 $apiKey = ""
-$envPath = Join-Path $PSScriptRoot ".env"
-if (Test-Path $envPath) {
-    Get-Content $envPath | ForEach-Object {
-        if ($_ -match "^ANTHROPIC_API_KEY=(.+)$") { $apiKey = $matches[1].Trim() }
+foreach ($envFile in @(".env.local", ".env")) {
+    $envPath = Join-Path $PSScriptRoot $envFile
+    if (Test-Path $envPath) {
+        Get-Content $envPath | ForEach-Object {
+            if ($_ -match "^ANTHROPIC_API_KEY=(.+)$" -and !$apiKey) { $apiKey = $matches[1].Trim() }
+        }
     }
 }
 
