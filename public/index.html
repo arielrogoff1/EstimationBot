@@ -327,8 +327,22 @@ function getCategory(type) {
   return 'walls'; // default
 }
 
+function isBillable(a) { return a.status !== 'existing'; }
+
+function calcSellPrice(areas) {
+  const billable = areas.filter(isBillable);
+  let ccBF = 0, ocBF = 0;
+  billable.forEach(a => {
+    if (a.foam_type === 'closed_cell') ccBF += (a.board_feet||0);
+    else ocBF += (a.board_feet||0);
+  });
+  const material = ccBF * 1.00 + ocBF * 0.44;
+  const totalBF  = ccBF + ocBF;
+  const labor    = (totalBF / 500) * 85;
+  return { material: Math.round(material), sell: Math.round((material + labor) * 1.35), totalBF: Math.round(totalBF), ccBF: Math.round(ccBF), ocBF: Math.round(ocBF) };
+}
+
 function renderDashboard(data) {
-  const s = data.summary || {};
   const allAreas = (data.categories || []).flatMap(c => (c.areas||[]).map(a => ({...a, _cat: c.category})))
     .concat((data.floors||[]).flatMap(f => (f.areas||[]).map(a => ({...a, _cat: getCategory(a.type)}))));
 
@@ -340,31 +354,36 @@ function renderDashboard(data) {
     if (grouped[cat]) grouped[cat].push(a); else grouped['walls'].push(a);
   });
 
+  // Recalculate totals from billable areas only (exclude existing)
+  const billableAreas = allAreas.filter(isBillable);
+  const totals = calcSellPrice(allAreas);
+  const totalBillableSF = Math.round(billableAreas.reduce((s,a) => s+(a.net_area_sf||0), 0));
+  const s = data.summary || {};
+  const flags = (s.warning_flags || []).filter(Boolean);
+
   // Sidebar summary
   document.getElementById('summary-section').style.display = 'block';
 
   let catBreakdown = '';
   CATEGORIES.forEach(cat => {
-    const areas = grouped[cat.key];
-    if (!areas.length) return;
-    const bf  = areas.reduce((sum,a) => sum + (a.board_feet||0), 0);
-    const sf  = areas.reduce((sum,a) => sum + (a.net_area_sf||0), 0);
-    catBreakdown += `<div class="stat-row"><span class="stat-label">${cat.label}</span><span class="stat-val">${fmt(Math.round(bf))} BF</span></div>`;
+    const billable = (grouped[cat.key]||[]).filter(isBillable);
+    if (!billable.length) return;
+    const bf = Math.round(billable.reduce((s,a) => s+(a.board_feet||0), 0));
+    catBreakdown += `<div class="stat-row"><span class="stat-label">${cat.label}</span><span class="stat-val">${fmt(bf)} BF</span></div>`;
   });
 
   document.getElementById('summary-content').innerHTML = `
     ${catBreakdown}
     <hr class="stat-divider">
-    <div class="stat-row"><span class="stat-label">Total Board Feet</span><span class="stat-val">${fmt(s.total_board_feet)} BF</span></div>
-    <div class="stat-row"><span class="stat-label">Total Net Area</span><span class="stat-val">${fmt(s.total_net_area_sf)} sf</span></div>
-    <div class="stat-row"><span class="stat-label">Material Cost</span><span class="stat-val">${fmtMoney(s.estimated_material_cost)}</span></div>
+    <div class="stat-row"><span class="stat-label">Total Board Feet</span><span class="stat-val">${fmt(totals.totalBF)} BF</span></div>
+    <div class="stat-row"><span class="stat-label">Total Net Area</span><span class="stat-val">${fmt(totalBillableSF)} sf</span></div>
+    <div class="stat-row"><span class="stat-label">Material Cost</span><span class="stat-val">${fmtMoney(totals.material)}</span></div>
     <div class="sell-box">
       <div class="sell-label">Estimated Sell Price</div>
-      <div class="sell-price">${fmtMoney(s.estimated_sell_price)}</div>
-      <div class="sell-sub">Incl. labor + 35% margin</div>
+      <div class="sell-price">${fmtMoney(totals.sell)}</div>
+      <div class="sell-sub">New + replacement only · labor + 35% margin</div>
     </div>`;
 
-  const flags = (s.warning_flags || []).filter(Boolean);
   if (flags.length) {
     document.getElementById('warnings-section').style.display = 'block';
     document.getElementById('warnings-content').innerHTML = flags.map(f => `<div class="warn-item">⚠️ ${f}</div>`).join('');
@@ -375,12 +394,12 @@ function renderDashboard(data) {
     <div class="proj-info">
       <div>
         <div class="proj-info-name">${data.project_name || 'Unknown Project'}</div>
-        <div class="proj-info-meta">Scale: ${data.scale || 'Not detected'} · ${totalSurfaces} surface${totalSurfaces!==1?'s':''}</div>
+        <div class="proj-info-meta">Scale: ${data.scale || 'Not detected'} · ${totalSurfaces} surface${totalSurfaces!==1?'s':''} · ${billableAreas.length} billable</div>
       </div>
       <div class="proj-info-right">
-        <div class="proj-stat"><div class="proj-stat-val">${fmt(s.total_net_area_sf)} sf</div><div class="proj-stat-lab">Net Area</div></div>
-        <div class="proj-stat"><div class="proj-stat-val">${fmt(s.total_board_feet)}</div><div class="proj-stat-lab">Board Feet</div></div>
-        <div class="proj-stat"><div class="proj-stat-val" style="color:var(--orange)">${fmtMoney(s.estimated_sell_price)}</div><div class="proj-stat-lab">Sell Price</div></div>
+        <div class="proj-stat"><div class="proj-stat-val">${fmt(totalBillableSF)} sf</div><div class="proj-stat-lab">Net Area</div></div>
+        <div class="proj-stat"><div class="proj-stat-val">${fmt(totals.totalBF)}</div><div class="proj-stat-lab">Board Feet</div></div>
+        <div class="proj-stat"><div class="proj-stat-val" style="color:var(--orange)">${fmtMoney(totals.sell)}</div><div class="proj-stat-lab">Sell Price</div></div>
       </div>
     </div>`;
 
@@ -390,12 +409,13 @@ function renderDashboard(data) {
     CATEGORIES.forEach(cat => {
       const areas = grouped[cat.key];
       if (!areas.length) return;
-      const catBF = Math.round(areas.reduce((s,a)=>s+(a.board_feet||0),0));
-      const catSF = Math.round(areas.reduce((s,a)=>s+(a.net_area_sf||0),0));
-      html += `<div class="floor-header">${cat.label} <span style="color:var(--slate-500);font-weight:400;font-size:10px">${areas.length} surface${areas.length!==1?'s':''} &nbsp;·&nbsp; ${fmt(catSF)} sf &nbsp;·&nbsp; ${fmt(catBF)} BF</span></div>`;
+      const billable = areas.filter(isBillable);
+      const catBF = Math.round(billable.reduce((s,a)=>s+(a.board_feet||0),0));
+      const catSF = Math.round(billable.reduce((s,a)=>s+(a.net_area_sf||0),0));
+      html += `<div class="floor-header">${cat.label} <span style="color:var(--slate-500);font-weight:400;font-size:10px">${areas.length} surface${areas.length!==1?'s':''} &nbsp;·&nbsp; ${fmt(catSF)} sf &nbsp;·&nbsp; ${fmt(catBF)} BF (billable)</span></div>`;
       html += `<div class="tbl-wrap"><table>
         <thead><tr>
-          <th>Surface</th><th>Location</th>
+          <th>Surface</th><th>Location</th><th>Status</th>
           <th>L (ft)</th><th>H (ft)</th>
           <th>Win sf</th><th>Door sf</th>
           <th>Net sf</th><th>Foam</th>
@@ -403,18 +423,25 @@ function renderDashboard(data) {
           <th>Board Feet</th><th>Conf.</th>
         </tr></thead><tbody>`;
       areas.forEach(a => {
-        const low = (a.confidence||100) < 70;
+        const low      = (a.confidence||100) < 70;
+        const existing = a.status === 'existing';
         const locLabel = a.floor || a.location || '';
-        html += `<tr${low?' class="low-conf"':''}>
-          <td><strong>${a.label||'—'}</strong>${low?' <span style="color:#d97706">⚠️</span>':''}</td>
+        const statusBadge = existing
+          ? `<span style="background:#e2e8f0;color:#64748b;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600">EXISTING</span>`
+          : a.status === 'replacement'
+            ? `<span style="background:#fef3c7;color:#92400e;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600">REPLACE</span>`
+            : `<span style="background:#dcfce7;color:#166534;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600">NEW</span>`;
+        html += `<tr${existing?' style="opacity:.45"':low?' class="low-conf"':''}>
+          <td><strong>${a.label||'—'}</strong>${low&&!existing?' <span style="color:#d97706">⚠️</span>':''}</td>
           <td><span class="type-badge">${locLabel}</span></td>
+          <td>${statusBadge}</td>
           <td>${fmtD(a.length_ft)}</td><td>${fmtD(a.height_ft)}</td>
           <td>${fmt(a.window_area_sf)}</td><td>${fmt(a.door_area_sf)}</td>
-          <td><strong>${fmt(a.net_area_sf)}</strong></td>
+          <td><strong>${existing?'<s>':''} ${fmt(a.net_area_sf)} ${existing?'</s>':''}</strong></td>
           <td>${foamBadge(a.foam_type)}</td>
           <td>R-${a.r_value||'—'}</td>
           <td>${fmtD(a.thickness_in)}″</td>
-          <td><strong>${fmt(a.board_feet)}</strong></td>
+          <td><strong>${existing?'<s>':''} ${fmt(a.board_feet)} ${existing?'</s>':''}</strong></td>
           <td>${confBadge(a.confidence)}</td>
         </tr>`;
       });
@@ -441,6 +468,7 @@ Schema:
         {
           "label": "descriptive name e.g. North Exterior Wall",
           "floor": "location e.g. First Floor, Basement, Attic",
+          "status": "new | replacement | existing",
           "type": "exterior_wall|interior_wall|garage_wall|foundation_wall|rim_joist|roof|roof_deck|ceiling|attic_ceiling|attic_floor|crawl_space|floor|under_floor",
           "length_ft": 0,
           "height_ft": 0,
@@ -466,6 +494,12 @@ Schema:
     "warning_flags": []
   }
 }
+
+Status rules:
+- new: surface has no existing insulation — being insulated for the first time
+- replacement: surface has existing insulation that will be torn out and replaced
+- existing: surface already has insulation that is staying — do NOT include in summary totals
+- When in doubt, default to "new"
 
 Category rules:
 - walls: all exterior walls, interior walls, garage walls, foundation walls, rim joists
