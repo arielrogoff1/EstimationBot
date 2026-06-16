@@ -109,6 +109,19 @@ tbody tr.low-conf td{background:#fffbeb}
 
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:var(--slate-300);border-radius:3px}
+
+/* TABS */
+.tabs-bar{display:flex;gap:4px;margin-bottom:20px;background:#fff;border:1px solid var(--slate-200);border-radius:10px;padding:4px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.tab-btn{flex:1;padding:7px;border:none;background:transparent;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;color:var(--slate-500);transition:all .15s;font-family:inherit}
+.tab-btn.active{background:var(--orange);color:#fff}
+.tab-btn:hover:not(.active){background:var(--slate-100);color:var(--slate-700)}
+
+/* ANNOTATED PLAN */
+.plan-page{background:#fff;border:1px solid var(--slate-200);border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);margin-bottom:24px}
+.plan-page-hdr{padding:10px 14px;border-bottom:1px solid var(--slate-200);display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;color:var(--slate-700)}
+.plan-canvas{display:block;width:100%;height:auto}
+.plan-legend{display:flex;gap:12px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--slate-100);font-size:11px}
+.legend-dot{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -162,9 +175,9 @@ tbody tr.low-conf td{background:#fffbeb}
 </div>
 
 <script>
-// ── API KEY ──
-// ── DRAG & DROP ──
+// ── STATE ──
 let selectedFile = null;
+let _planImages  = []; // base64 strings of plan pages, kept for annotation
 const zone = document.getElementById('drop-zone');
 zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
 zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
@@ -216,13 +229,15 @@ async function analyze() {
     if (isPDF) {
       document.querySelector('.loading-title').textContent = 'Converting PDF pages to images…';
       const images = await pdfPagesToImages(selectedFile);
+      _planImages = images;
       document.querySelector('.loading-title').textContent = `Claude is reading ${images.length} page${images.length>1?'s':''}…`;
-      contentBlocks = images.map(b64 => ({
+      contentBlocks = images.map((b64, i) => ({
         type: 'image',
         source: { type: 'base64', media_type: 'image/jpeg', data: b64 }
       }));
     } else {
       const { base64, mediaType } = await readFileAsBase64(selectedFile);
+      _planImages = [base64];
       contentBlocks = [{ type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } }];
     }
 
@@ -253,6 +268,7 @@ async function analyze() {
     const result  = JSON.parse(jsonStr);
 
     renderDashboard(result);
+    renderAnnotatedPlan(result, _planImages);
   } catch (err) {
     document.getElementById('main').innerHTML = `
       <div class="empty">
@@ -356,7 +372,7 @@ function renderDashboard(data) {
 
   // Recalculate totals from billable areas only (exclude existing)
   const billableAreas = allAreas.filter(isBillable);
-  const totals = calcSellPrice(allAreas);
+  const totals = calcSellPrice(billableAreas);
   const totalBillableSF = Math.round(billableAreas.reduce((s,a) => s+(a.net_area_sf||0), 0));
   const s = data.summary || {};
   const flags = (s.warning_flags || []).filter(Boolean);
@@ -449,7 +465,133 @@ function renderDashboard(data) {
     });
   }
 
-  document.getElementById('main').innerHTML = html;
+  document.getElementById('main').innerHTML = `
+    <div class="tabs-bar">
+      <button class="tab-btn active" data-tab="measurements" onclick="switchTab('measurements')">📊 Measurements</button>
+      <button class="tab-btn" data-tab="plan" onclick="switchTab('plan')">🖼️ Annotated Plan</button>
+    </div>
+    <div id="tab-measurements">${html}</div>
+    <div id="tab-plan" style="display:none">
+      <div class="empty"><div class="spinner"></div><div class="empty-title">Building annotations…</div></div>
+    </div>`;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.getElementById('tab-measurements').style.display = tab === 'measurements' ? 'block' : 'none';
+  document.getElementById('tab-plan').style.display        = tab === 'plan'         ? 'block' : 'none';
+}
+
+function downloadCanvas(id, filename) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/jpeg', 0.92);
+  a.download = filename;
+  a.click();
+}
+
+const CAT_COLORS = {
+  walls:   { fill: 'rgba(59,130,246,0.18)',  border: '#3b82f6', hex: '#3b82f6' },
+  roof:    { fill: 'rgba(239,68,68,0.18)',   border: '#ef4444', hex: '#ef4444' },
+  ceiling: { fill: 'rgba(245,158,11,0.18)',  border: '#f59e0b', hex: '#f59e0b' },
+  floors:  { fill: 'rgba(16,185,129,0.18)',  border: '#10b981', hex: '#10b981' },
+};
+
+function renderAnnotatedPlan(data, images) {
+  const container = document.getElementById('tab-plan');
+  if (!container) return;
+
+  const allAreas = (data.categories||[]).flatMap(c => (c.areas||[]).map(a => ({...a, _cat: c.category})))
+    .concat((data.floors||[]).flatMap(f => (f.areas||[]).map(a => ({...a, _cat: getCategory(a.type)}))));
+
+  const areasWithBox = allAreas.filter(a => a.bbox && (a.bbox.w_pct > 0 || a.bbox.width_pct > 0));
+
+  if (!images.length) {
+    container.innerHTML = '<div class="empty"><div class="empty-title">No image to annotate</div></div>';
+    return;
+  }
+
+  container.innerHTML = '';
+
+  // Legend
+  const legend = document.createElement('div');
+  legend.className = 'plan-legend';
+  legend.style.marginBottom = '16px';
+  CATEGORIES.forEach(c => {
+    const col = CAT_COLORS[c.key];
+    legend.innerHTML += `<span><span class="legend-dot" style="background:${col.hex}"></span>${c.label}</span>`;
+  });
+  container.appendChild(legend);
+
+  if (!areasWithBox.length) {
+    const note = document.createElement('div');
+    note.style.cssText = 'background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px 16px;font-size:12px;color:#92400e;margin-bottom:16px';
+    note.textContent = 'Claude didn\'t return position data for this plan — annotations require re-analysis or a clearer drawing. The plan image is shown below for reference.';
+    container.appendChild(note);
+  }
+
+  images.forEach((b64, pageIdx) => {
+    const pageAreas = areasWithBox.filter(a => {
+      const pg = a.bbox.page != null ? a.bbox.page : 0;
+      return pg === pageIdx;
+    });
+
+    const wrap = document.createElement('div');
+    wrap.className = 'plan-page';
+
+    const hdr = document.createElement('div');
+    hdr.className = 'plan-page-hdr';
+    hdr.innerHTML = `<span>Page ${pageIdx + 1} — ${pageAreas.length} annotation${pageAreas.length !== 1 ? 's' : ''}</span>
+      <button class="btn btn-outline btn-sm" onclick="downloadCanvas('plan-canvas-${pageIdx}','annotated-p${pageIdx+1}.jpg')">⬇ Download</button>`;
+    wrap.appendChild(hdr);
+
+    const canvas = document.createElement('canvas');
+    canvas.id = `plan-canvas-${pageIdx}`;
+    canvas.className = 'plan-canvas';
+    wrap.appendChild(canvas);
+    container.appendChild(wrap);
+
+    const img = new Image();
+    img.onload = () => {
+      canvas.width  = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      pageAreas.forEach(a => {
+        const bb  = a.bbox;
+        const col = CAT_COLORS[a._cat || getCategory(a.type)] || CAT_COLORS.walls;
+        const x   = (bb.x_pct   ?? bb.x      ?? 0) * canvas.width;
+        const y   = (bb.y_pct   ?? bb.y      ?? 0) * canvas.height;
+        const w   = (bb.w_pct   ?? bb.width_pct ?? bb.w ?? 0) * canvas.width;
+        const h   = (bb.h_pct   ?? bb.height_pct ?? bb.h ?? 0) * canvas.height;
+        if (w < 2 || h < 2) return;
+
+        ctx.fillStyle = col.fill;
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = col.border;
+        ctx.lineWidth = Math.max(1.5, canvas.width / 600);
+        ctx.strokeRect(x, y, w, h);
+
+        // Label pill
+        const labelText = `${a.label || a.type} · ${fmt(a.board_feet)} BF`;
+        const fs = Math.max(10, Math.min(14, canvas.width / 80));
+        ctx.font = `bold ${fs}px sans-serif`;
+        const tw = ctx.measureText(labelText).width;
+        const px = 5, py = 3;
+        const lx = Math.min(x, canvas.width - tw - px * 2 - 4);
+        const ly = y > fs + py * 2 + 2 ? y - (fs + py * 2 + 2) : y + h + 2;
+        ctx.fillStyle = col.border;
+        ctx.beginPath();
+        ctx.roundRect(lx, ly, tw + px * 2, fs + py * 2, 3);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.fillText(labelText, lx + px, ly + fs + py - 1);
+      });
+    };
+    img.src = `data:image/jpeg;base64,${b64}`;
+  });
 }
 
 const SYSTEM_PROMPT = `You are an expert spray foam insulation estimator with 20 years of experience reading architectural plans.
@@ -469,6 +611,7 @@ Schema:
           "label": "descriptive name e.g. North Exterior Wall",
           "floor": "location e.g. First Floor, Basement, Attic",
           "status": "new | replacement | existing",
+          "bbox": { "page": 0, "x_pct": 0.0, "y_pct": 0.0, "w_pct": 0.0, "h_pct": 0.0 },
           "type": "exterior_wall|interior_wall|garage_wall|foundation_wall|rim_joist|roof|roof_deck|ceiling|attic_ceiling|attic_floor|crawl_space|floor|under_floor",
           "length_ft": 0,
           "height_ft": 0,
@@ -515,6 +658,7 @@ Calculation rules:
 - Add 10% waste to board feet. Material cost = BF x price_per_BF.
 - estimated_sell_price = (material + labor) x 1.35 where labor = total_BF/500 x 85.
 - confidence 90-100: clear readable dimension, 70-89: estimated from context, below 70: guessed.
+- bbox: estimate the bounding box of each surface on the image as fractions (0.0–1.0) of the image width/height. page is 0-based index matching which image the surface appears on. Be as precise as possible — these coordinates will be drawn as annotation overlays on the original plan.
 - Always return valid JSON even if plan is unclear — use best estimates with low confidence.`;
 </script>
 </body>
