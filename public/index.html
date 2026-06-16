@@ -14,24 +14,32 @@
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--slate-100);color:var(--slate-900);font-size:14px;line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
 
+/* API KEY BAR */
+.key-bar{background:var(--slate-800);padding:8px 20px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--slate-400)}
+.key-bar label{color:var(--slate-300);font-weight:600;white-space:nowrap}
+.key-input{flex:1;max-width:420px;background:var(--slate-900);border:1px solid var(--slate-700);border-radius:6px;padding:5px 10px;font-size:12px;color:#fff;font-family:monospace}
+.key-input:focus{outline:none;border-color:var(--orange)}
+.key-status{font-size:11px;margin-left:4px}
+.key-status.ok{color:#4ade80}.key-status.err{color:#f87171}
+
 /* NAV */
-.topnav{background:var(--slate-900);padding:0 28px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 1px 0 rgba(255,255,255,.06)}
+.topnav{background:var(--slate-900);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .nav-logo{display:flex;align-items:center;gap:9px;color:#fff;font-size:15px;font-weight:700}
 .nav-logo-mark{width:30px;height:30px;background:var(--orange);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
 .nav-hint{font-size:11px;color:var(--slate-500)}
 
 /* LAYOUT */
-.layout{display:flex;flex:1;overflow:hidden}
+.layout{display:flex;flex:1;overflow:hidden;min-height:0}
 .sidebar{width:260px;background:#fff;border-right:1px solid var(--slate-200);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
 .main{flex:1;overflow-y:auto;padding:24px 28px}
 
 /* SIDEBAR SECTIONS */
-.sb-section{padding:16px}
+.sb-section{padding:14px 16px}
 .sb-section+.sb-section{border-top:1px solid var(--slate-100)}
 .sb-label{font-size:10px;font-weight:700;color:var(--slate-400);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
 
 /* UPLOAD ZONE */
-.drop-zone{border:2px dashed var(--slate-300);border-radius:10px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .2s;background:var(--slate-50)}
+.drop-zone{border:2px dashed var(--slate-300);border-radius:10px;padding:22px 16px;text-align:center;cursor:pointer;transition:all .2s;background:var(--slate-50)}
 .drop-zone:hover,.drop-zone.drag-over{border-color:var(--orange);background:rgba(255,107,43,.04)}
 .drop-icon{font-size:28px;margin-bottom:8px}
 .drop-title{font-size:13px;font-weight:600;color:var(--slate-700);margin-bottom:3px}
@@ -46,12 +54,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 /* FILE LIST */
 .file-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;border:1px solid var(--slate-200);margin-top:8px;background:#fff;font-size:12px}
 .file-item.ready{border-color:#86efac;background:#f0fdf4}
-.file-name{font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.file-size{color:var(--slate-400);flex-shrink:0}
-.file-remove{color:var(--slate-300);border:none;background:none;cursor:pointer;font-size:14px;padding:0;line-height:1;flex-shrink:0}
+.file-name{font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+.file-size{color:var(--slate-400);flex-shrink:0;font-size:11px}
+.file-remove{color:var(--slate-300);border:none;background:none;cursor:pointer;font-size:13px;padding:0;line-height:1}
 .file-remove:hover{color:#ef4444}
 
-/* SUMMARY STATS */
+/* SUMMARY */
 .stat-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px}
 .stat-label{color:var(--slate-500)}
 .stat-val{font-weight:700}
@@ -61,14 +69,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .sell-price{color:#fff;font-size:24px;font-weight:800}
 .sell-sub{color:rgba(255,255,255,.6);font-size:9px;margin-top:2px}
 
-/* WARNINGS */
+/* WARN */
 .warn-item{display:flex;align-items:flex-start;gap:6px;font-size:11px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:7px 9px;margin-top:6px;line-height:1.4}
 
-/* MAIN AREA */
-.page-title{font-size:20px;font-weight:700;margin-bottom:4px}
-.page-sub{font-size:12px;color:var(--slate-500);margin-bottom:20px}
-
-/* EMPTY STATE */
+/* MAIN */
 .empty{text-align:center;padding:60px 20px;color:var(--slate-400)}
 .empty-icon{font-size:48px;margin-bottom:14px;opacity:.5}
 .empty-title{font-size:16px;font-weight:600;color:var(--slate-600);margin-bottom:6px}
@@ -81,12 +85,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .loading-title{font-size:15px;font-weight:600;margin-bottom:6px}
 .loading-sub{font-size:12px;color:var(--slate-400)}
 
-/* FLOOR SECTION */
+/* RESULTS */
 .floor-header{font-size:11px;font-weight:700;color:var(--slate-400);text-transform:uppercase;letter-spacing:.08em;margin:20px 0 8px;display:flex;align-items:center;gap:8px}
 .floor-header::after{content:'';flex:1;border-top:1px solid var(--slate-200)}
-
-/* TABLE */
-.tbl-wrap{background:#fff;border:1px solid var(--slate-200);border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);margin-bottom:4px}
+.tbl-wrap{background:#fff;border:1px solid var(--slate-200);border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);margin-bottom:4px;overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
 thead tr{background:var(--slate-50)}
 th{padding:9px 11px;text-align:right;font-size:10px;font-weight:700;color:var(--slate-500);border-bottom:1px solid var(--slate-200);white-space:nowrap}
@@ -96,8 +98,6 @@ td:first-child,td:nth-child(2){text-align:left}
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:var(--slate-50)}
 tbody tr.low-conf td{background:#fffbeb}
-
-/* BADGES */
 .foam-cc{background:#dbeafe;color:#1e40af;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px}
 .foam-oc{background:#ede9fe;color:#5b21b6;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px}
 .conf{font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px}
@@ -105,12 +105,10 @@ tbody tr.low-conf td{background:#fffbeb}
 .conf-m{background:#fef9c3;color:#92400e}
 .conf-l{background:#fee2e2;color:#991b1b}
 .type-badge{font-size:9px;color:var(--slate-400);background:var(--slate-100);padding:1px 6px;border-radius:4px}
-
-/* PROJ INFO */
-.proj-info{background:#fff;border:1px solid var(--slate-200);border-radius:10px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;gap:16px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.proj-info{background:#fff;border:1px solid var(--slate-200);border-radius:10px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;gap:16px;box-shadow:0 1px 3px rgba(0,0,0,.05);flex-wrap:wrap}
 .proj-info-name{font-size:16px;font-weight:700}
 .proj-info-meta{font-size:11px;color:var(--slate-400);margin-top:2px}
-.proj-info-right{margin-left:auto;display:flex;gap:12px}
+.proj-info-right{margin-left:auto;display:flex;gap:16px}
 .proj-stat{text-align:right}
 .proj-stat-val{font-size:14px;font-weight:700}
 .proj-stat-lab{font-size:10px;color:var(--slate-400)}
@@ -121,20 +119,25 @@ tbody tr.low-conf td{background:#fffbeb}
 </head>
 <body>
 
+<!-- API KEY BAR -->
+<div class="key-bar">
+  <label>🔑 Anthropic API Key</label>
+  <input class="key-input" type="password" id="api-key" placeholder="sk-ant-..." oninput="saveKey(this.value)" autocomplete="off">
+  <span class="key-status" id="key-status"></span>
+  <span style="margin-left:auto;font-size:10px">Key stays in your browser only — never sent anywhere except Anthropic</span>
+</div>
+
 <nav class="topnav">
   <div class="nav-logo">
     <div class="nav-logo-mark">🧊</div>
     Spray Foam Estimator AI
   </div>
-  <span class="nav-hint">Powered by Claude claude-sonnet-4-6</span>
+  <span class="nav-hint">Powered by Claude AI Vision</span>
 </nav>
 
 <div class="layout">
-
-  <!-- SIDEBAR -->
   <aside class="sidebar">
 
-    <!-- Upload -->
     <div class="sb-section">
       <div class="sb-label">Upload Plan</div>
       <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg,.tiff,.tif,.webp" style="display:none" onchange="onFileSelect(this.files)">
@@ -150,13 +153,11 @@ tbody tr.low-conf td{background:#fffbeb}
       </button>
     </div>
 
-    <!-- Summary (shown after analysis) -->
     <div class="sb-section" id="summary-section" style="display:none">
       <div class="sb-label">Summary</div>
       <div id="summary-content"></div>
     </div>
 
-    <!-- Warnings -->
     <div class="sb-section" id="warnings-section" style="display:none">
       <div class="sb-label">⚠️ Flags</div>
       <div id="warnings-content"></div>
@@ -164,35 +165,49 @@ tbody tr.low-conf td{background:#fffbeb}
 
   </aside>
 
-  <!-- MAIN -->
   <main class="main" id="main">
     <div class="empty">
       <div class="empty-icon">📐</div>
       <div class="empty-title">No plan analyzed yet</div>
-      <div class="empty-sub">Upload a PDF or image of your building plans on the left. Claude AI will extract all dimensions and generate a full spray foam estimate.</div>
+      <div class="empty-sub">Paste your API key above, then upload a PDF or image of your building plans. Claude AI will extract all dimensions and generate a full spray foam estimate.</div>
     </div>
   </main>
-
 </div>
 
 <script>
-let selectedFile = null;
+// ── API KEY ──
+const keyInput = document.getElementById('api-key');
+const savedKey = localStorage.getItem('sf_api_key') || '';
+if (savedKey) { keyInput.value = savedKey; showKeyStatus(savedKey); }
+
+function saveKey(val) {
+  localStorage.setItem('sf_api_key', val.trim());
+  showKeyStatus(val.trim());
+}
+function showKeyStatus(val) {
+  const el = document.getElementById('key-status');
+  if (!val) { el.textContent = ''; return; }
+  if (val.startsWith('sk-ant-') && val.length > 20) {
+    el.textContent = '✓ Key looks good';
+    el.className = 'key-status ok';
+  } else {
+    el.textContent = 'Key format looks off';
+    el.className = 'key-status err';
+  }
+}
 
 // ── DRAG & DROP ──
+let selectedFile = null;
 const zone = document.getElementById('drop-zone');
 zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
 zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-zone.addEventListener('drop', e => {
-  e.preventDefault();
-  zone.classList.remove('drag-over');
-  onFileSelect(e.dataTransfer.files);
-});
+zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); onFileSelect(e.dataTransfer.files); });
 
 function onFileSelect(files) {
   if (!files || !files.length) return;
   selectedFile = files[0];
-  const mb = (selectedFile.size / 1048576).toFixed(1);
-  const icon = selectedFile.name.endsWith('.pdf') ? '📕' : '🖼️';
+  const mb   = (selectedFile.size / 1048576).toFixed(1);
+  const icon = selectedFile.name.toLowerCase().endsWith('.pdf') ? '📕' : '🖼️';
   document.getElementById('file-list').innerHTML = `
     <div class="file-item ready">
       <span>${icon}</span>
@@ -200,9 +215,7 @@ function onFileSelect(files) {
       <span class="file-size">${mb} MB</span>
       <button class="file-remove" onclick="clearFile()">✕</button>
     </div>`;
-  const btn = document.getElementById('analyze-btn');
-  btn.style.display = 'flex';
-  btn.textContent = 'Analyze with Claude AI →';
+  document.getElementById('analyze-btn').style.display = 'flex';
 }
 
 function clearFile() {
@@ -214,6 +227,8 @@ function clearFile() {
 
 // ── ANALYZE ──
 async function analyze() {
+  const apiKey = (localStorage.getItem('sf_api_key') || '').trim();
+  if (!apiKey) { alert('Paste your Anthropic API key in the bar at the top first.'); return; }
   if (!selectedFile) return;
 
   const btn = document.getElementById('analyze-btn');
@@ -224,24 +239,51 @@ async function analyze() {
     <div class="loading">
       <div class="spinner"></div>
       <div class="loading-title">Claude is reading your plan…</div>
-      <div class="loading-sub">Extracting dimensions, calculating board feet, estimating costs.<br>This usually takes 15–30 seconds.</div>
+      <div class="loading-sub">Extracting dimensions, calculating board feet, estimating costs.<br>Usually takes 15–30 seconds.</div>
     </div>`;
-
   document.getElementById('summary-section').style.display = 'none';
   document.getElementById('warnings-section').style.display = 'none';
 
-  const form = new FormData();
-  form.append('file', selectedFile);
-
   try {
-    const res  = await fetch('/api/analyze', { method: 'POST', body: form });
-    const json = await res.json();
+    const { base64, mediaType } = await readFileAsBase64(selectedFile);
+    const isPDF  = mediaType === 'application/pdf';
 
-    if (!res.ok || !json.success) {
-      throw new Error(json.error || 'Analysis failed');
+    const contentBlock = isPDF
+      ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } }
+      : { type: 'image',    source: { type: 'base64', media_type: mediaType, data: base64 } };
+
+    const body = {
+      model: 'claude-sonnet-4-6',
+      max_tokens: 8096,
+      system: SYSTEM_PROMPT,
+      messages: [{
+        role: 'user',
+        content: [contentBlock, { type: 'text', text: 'Analyze this building plan and extract all spray foam insulation measurements. Return only the JSON object.' }]
+      }]
+    };
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-allow-browser': 'true'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `API error ${res.status}`);
     }
 
-    renderDashboard(json.data);
+    const data   = await res.json();
+    const raw    = data.content[0].text.trim();
+    const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    const result  = JSON.parse(jsonStr);
+
+    renderDashboard(result);
   } catch (err) {
     document.getElementById('main').innerHTML = `
       <div class="empty">
@@ -255,36 +297,41 @@ async function analyze() {
   }
 }
 
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => {
+      const dataUrl  = reader.result;
+      const base64   = dataUrl.split(',')[1];
+      const mediaType = file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/png');
+      resolve({ base64, mediaType });
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 // ── RENDER ──
-function fmt(n)  { return n == null ? '—' : Number(n).toLocaleString(); }
-function fmtD(n) { return n == null ? '—' : Number(n).toFixed(1); }
-function fmtMoney(n) { return n == null ? '—' : '$' + Number(n).toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0}); }
+function fmt(n)    { return n == null ? '—' : Number(n).toLocaleString(); }
+function fmtD(n)   { return n == null ? '—' : Number(n).toFixed(1); }
+function fmtMoney(n){ return n == null ? '—' : '$' + Number(n).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); }
 
 function confBadge(c) {
   if (c == null) return '';
   const cls = c >= 85 ? 'conf-h' : c >= 65 ? 'conf-m' : 'conf-l';
   return `<span class="conf ${cls}">${c}%</span>`;
 }
-
 function foamBadge(t) {
-  return t === 'closed_cell'
-    ? '<span class="foam-cc">CC</span>'
-    : '<span class="foam-oc">OC</span>';
+  return t === 'closed_cell' ? '<span class="foam-cc">CC</span>' : '<span class="foam-oc">OC</span>';
 }
-
 function typeLabel(t) {
-  const map = {
-    exterior_wall:'Ext Wall', interior_wall:'Int Wall', roof:'Roof',
-    attic_floor:'Attic Floor', rim_joist:'Rim Joist', crawl_space:'Crawl Space',
-    garage_wall:'Garage', foundation_wall:'Foundation'
-  };
-  return `<span class="type-badge">${map[t] || t}</span>`;
+  const map = { exterior_wall:'Ext Wall', interior_wall:'Int Wall', roof:'Roof', attic_floor:'Attic Floor', rim_joist:'Rim Joist', crawl_space:'Crawl Space', garage_wall:'Garage', foundation_wall:'Foundation' };
+  return `<span class="type-badge">${map[t] || t || '—'}</span>`;
 }
 
 function renderDashboard(data) {
   const s = data.summary || {};
 
-  // Sidebar summary
   document.getElementById('summary-section').style.display = 'block';
   document.getElementById('summary-content').innerHTML = `
     <div class="stat-row"><span class="stat-label">Total Net Area</span><span class="stat-val">${fmt(s.total_net_area_sf)} sf</span></div>
@@ -299,25 +346,18 @@ function renderDashboard(data) {
       <div class="sell-sub">Incl. labor + 35% margin</div>
     </div>`;
 
-  // Warnings
   const flags = (s.warning_flags || []).filter(Boolean);
   if (flags.length) {
     document.getElementById('warnings-section').style.display = 'block';
-    document.getElementById('warnings-content').innerHTML = flags
-      .map(f => `<div class="warn-item">⚠️ ${f}</div>`)
-      .join('');
+    document.getElementById('warnings-content').innerHTML = flags.map(f => `<div class="warn-item">⚠️ ${f}</div>`).join('');
   }
 
-  // Main area — project header + floors
   const floors = data.floors || [];
-  let html = '';
-
-  // Project header
-  html += `
+  let html = `
     <div class="proj-info">
       <div>
         <div class="proj-info-name">${data.project_name || 'Unknown Project'}</div>
-        <div class="proj-info-meta">Scale: ${data.scale || 'Not detected'} · ${floors.length} floor${floors.length !== 1 ? 's' : ''} · ${floors.reduce((a,f)=>(a + (f.areas||[]).length),0)} surfaces</div>
+        <div class="proj-info-meta">Scale: ${data.scale || 'Not detected'} · ${floors.length} floor${floors.length!==1?'s':''} · ${floors.reduce((a,f)=>(a+(f.areas||[]).length),0)} surfaces</div>
       </div>
       <div class="proj-info-right">
         <div class="proj-stat"><div class="proj-stat-val">${fmt(s.total_net_area_sf)} sf</div><div class="proj-stat-lab">Net Area</div></div>
@@ -327,33 +367,30 @@ function renderDashboard(data) {
     </div>`;
 
   if (!floors.length) {
-    html += `<div class="empty"><div class="empty-icon">🤷</div><div class="empty-title">No measurements extracted</div><div class="empty-sub">Claude couldn't find clear dimensions in this plan. Try a higher-resolution image or a cleaner PDF.</div></div>`;
+    html += `<div class="empty"><div class="empty-icon">🤷</div><div class="empty-title">No measurements found</div><div class="empty-sub">Claude couldn't find clear dimensions. Try a higher-resolution image or a cleaner PDF.</div></div>`;
   } else {
     floors.forEach(floor => {
       const areas = floor.areas || [];
-      html += `<div class="floor-header">${floor.name || 'Floor'} <span style="color:var(--slate-500);font-weight:400;font-size:10px">${areas.length} surface${areas.length !== 1 ? 's' : ''}</span></div>`;
+      html += `<div class="floor-header">${floor.name||'Floor'} <span style="color:var(--slate-500);font-weight:400;font-size:10px">${areas.length} surface${areas.length!==1?'s':''}</span></div>`;
       html += `<div class="tbl-wrap"><table>
         <thead><tr>
           <th>Surface</th><th>Type</th>
           <th>L (ft)</th><th>H (ft)</th>
-          <th>Windows sf</th><th>Doors sf</th>
+          <th>Win sf</th><th>Door sf</th>
           <th>Net sf</th><th>Foam</th>
-          <th>R-Value</th><th>Thick (in)</th>
+          <th>R-Val</th><th>Thick″</th>
           <th>Board Feet</th><th>Conf.</th>
-        </tr></thead>
-        <tbody>`;
+        </tr></thead><tbody>`;
       areas.forEach(a => {
-        const lowConf = (a.confidence || 100) < 70;
-        html += `<tr${lowConf ? ' class="low-conf"' : ''}>
-          <td><strong>${a.label || '—'}</strong>${lowConf ? ' <span style="color:#d97706">⚠️</span>' : ''}</td>
+        const low = (a.confidence||100) < 70;
+        html += `<tr${low?' class="low-conf"':''}>
+          <td><strong>${a.label||'—'}</strong>${low?' <span style="color:#d97706">⚠️</span>':''}</td>
           <td>${typeLabel(a.type)}</td>
-          <td>${fmtD(a.length_ft)}</td>
-          <td>${fmtD(a.height_ft)}</td>
-          <td>${fmt(a.window_area_sf)}</td>
-          <td>${fmt(a.door_area_sf)}</td>
+          <td>${fmtD(a.length_ft)}</td><td>${fmtD(a.height_ft)}</td>
+          <td>${fmt(a.window_area_sf)}</td><td>${fmt(a.door_area_sf)}</td>
           <td><strong>${fmt(a.net_area_sf)}</strong></td>
           <td>${foamBadge(a.foam_type)}</td>
-          <td>R-${a.r_value || '—'}</td>
+          <td>R-${a.r_value||'—'}</td>
           <td>${fmtD(a.thickness_in)}″</td>
           <td><strong>${fmt(a.board_feet)}</strong></td>
           <td>${confBadge(a.confidence)}</td>
@@ -365,6 +402,57 @@ function renderDashboard(data) {
 
   document.getElementById('main').innerHTML = html;
 }
+
+const SYSTEM_PROMPT = `You are an expert spray foam insulation estimator with 20 years of experience reading architectural plans.
+Analyze the provided building plan and extract every surface that needs spray foam insulation.
+
+Return ONLY valid JSON — no explanation, no markdown, no code fences. Just raw JSON.
+
+Schema:
+{
+  "project_name": "address or name from plan, or 'Unknown Project'",
+  "scale": "drawing scale e.g. '1/4\" = 1\\'-0\"' or 'Not detected'",
+  "floors": [
+    {
+      "name": "Basement | First Floor | Second Floor | Attic",
+      "areas": [
+        {
+          "label": "e.g. North Exterior Wall",
+          "type": "exterior_wall|interior_wall|roof|attic_floor|rim_joist|crawl_space|garage_wall|foundation_wall",
+          "length_ft": 0,
+          "height_ft": 0,
+          "window_area_sf": 0,
+          "door_area_sf": 0,
+          "net_area_sf": 0,
+          "foam_type": "closed_cell|open_cell",
+          "r_value": 0,
+          "thickness_in": 0,
+          "board_feet": 0,
+          "confidence": 0
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_net_area_sf": 0,
+    "total_board_feet": 0,
+    "closed_cell_bf": 0,
+    "open_cell_bf": 0,
+    "estimated_material_cost": 0,
+    "estimated_sell_price": 0,
+    "warning_flags": []
+  }
+}
+
+Rules:
+- Closed cell: R-6.5/in, $1.00/BF. Open cell: R-3.7/in, $0.44/BF.
+- thickness_in = r_value / r_per_inch. board_feet = net_area_sf x thickness_in.
+- Default R: exterior_wall R-21 CC, roof R-38 CC, attic_floor R-49 OC, rim_joist R-13 CC, crawl_space R-21 CC, garage_wall R-13 CC.
+- net_area_sf = (length_ft x height_ft) - window_area_sf - door_area_sf.
+- Add 10% waste to board feet. Material cost = BF x price_per_BF.
+- estimated_sell_price = (material + labor) x 1.35 where labor = total_BF/500 x 85.
+- confidence 90-100: clear dimension, 70-89: estimated from context, below 70: guessed.
+- Always return valid JSON even if plan is unclear — estimate with low confidence.`;
 </script>
 </body>
 </html>
