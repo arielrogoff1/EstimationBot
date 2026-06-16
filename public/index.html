@@ -14,13 +14,6 @@
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--slate-100);color:var(--slate-900);font-size:14px;line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
 
-/* API KEY BAR */
-.key-bar{background:var(--slate-800);padding:8px 20px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--slate-400)}
-.key-bar label{color:var(--slate-300);font-weight:600;white-space:nowrap}
-.key-input{flex:1;max-width:420px;background:var(--slate-900);border:1px solid var(--slate-700);border-radius:6px;padding:5px 10px;font-size:12px;color:#fff;font-family:monospace}
-.key-input:focus{outline:none;border-color:var(--orange)}
-.key-status{font-size:11px;margin-left:4px}
-.key-status.ok{color:#4ade80}.key-status.err{color:#f87171}
 
 /* NAV */
 .topnav{background:var(--slate-900);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
@@ -119,13 +112,6 @@ tbody tr.low-conf td{background:#fffbeb}
 </head>
 <body>
 
-<!-- API KEY BAR -->
-<div class="key-bar">
-  <label>🔑 Anthropic API Key</label>
-  <input class="key-input" type="password" id="api-key" placeholder="sk-ant-..." oninput="saveKey(this.value)" autocomplete="off">
-  <span class="key-status" id="key-status"></span>
-  <span style="margin-left:auto;font-size:10px">Key stays in your browser only — never sent anywhere except Anthropic</span>
-</div>
 
 <nav class="topnav">
   <div class="nav-logo">
@@ -176,26 +162,6 @@ tbody tr.low-conf td{background:#fffbeb}
 
 <script>
 // ── API KEY ──
-const keyInput = document.getElementById('api-key');
-const savedKey = localStorage.getItem('sf_api_key') || '';
-if (savedKey) { keyInput.value = savedKey; showKeyStatus(savedKey); }
-
-function saveKey(val) {
-  localStorage.setItem('sf_api_key', val.trim());
-  showKeyStatus(val.trim());
-}
-function showKeyStatus(val) {
-  const el = document.getElementById('key-status');
-  if (!val) { el.textContent = ''; return; }
-  if (val.startsWith('sk-ant-') && val.length > 20) {
-    el.textContent = '✓ Key looks good';
-    el.className = 'key-status ok';
-  } else {
-    el.textContent = 'Key format looks off';
-    el.className = 'key-status err';
-  }
-}
-
 // ── DRAG & DROP ──
 let selectedFile = null;
 const zone = document.getElementById('drop-zone');
@@ -227,8 +193,6 @@ function clearFile() {
 
 // ── ANALYZE ──
 async function analyze() {
-  const apiKey = (localStorage.getItem('sf_api_key') || '').trim();
-  if (!apiKey) { alert('Paste your Anthropic API key in the bar at the top first.'); return; }
   if (!selectedFile) return;
 
   const btn = document.getElementById('analyze-btn');
@@ -262,14 +226,9 @@ async function analyze() {
       }]
     };
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/analyze', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-allow-browser': 'true'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
 
