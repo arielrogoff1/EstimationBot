@@ -80,7 +80,7 @@ while ($listener.IsListening) {
                 $res.ContentType = "application/json"
                 $res.ContentLength64 = $bytes.Length
                 $res.OutputStream.Write($bytes, 0, $bytes.Length)
-                Write-Host "  OK — $(($body | ConvertFrom-Json).messages[0].content[-1].text.Substring(0,40))..." -ForegroundColor Green
+                Write-Host "  OK - Analysis complete" -ForegroundColor Green
             }
             catch [System.Net.WebException] {
                 $statusCode = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 500 }

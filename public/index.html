@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <title>Spray Foam Estimator AI</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -209,21 +210,29 @@ async function analyze() {
   document.getElementById('warnings-section').style.display = 'none';
 
   try {
-    const { base64, mediaType } = await readFileAsBase64(selectedFile);
-    const isPDF  = mediaType === 'application/pdf';
+    const isPDF = selectedFile.type === 'application/pdf' || selectedFile.name.toLowerCase().endsWith('.pdf');
+    let contentBlocks = [];
 
-    const contentBlock = isPDF
-      ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } }
-      : { type: 'image',    source: { type: 'base64', media_type: mediaType, data: base64 } };
+    if (isPDF) {
+      document.querySelector('.loading-title').textContent = 'Converting PDF pages to images…';
+      const images = await pdfPagesToImages(selectedFile);
+      document.querySelector('.loading-title').textContent = `Claude is reading ${images.length} page${images.length>1?'s':''}…`;
+      contentBlocks = images.map(b64 => ({
+        type: 'image',
+        source: { type: 'base64', media_type: 'image/jpeg', data: b64 }
+      }));
+    } else {
+      const { base64, mediaType } = await readFileAsBase64(selectedFile);
+      contentBlocks = [{ type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } }];
+    }
+
+    contentBlocks.push({ type: 'text', text: 'Analyze this building plan and extract all spray foam insulation measurements. Return only the JSON object.' });
 
     const body = {
       model: 'claude-sonnet-4-6',
       max_tokens: 8096,
       system: SYSTEM_PROMPT,
-      messages: [{
-        role: 'user',
-        content: [contentBlock, { type: 'text', text: 'Analyze this building plan and extract all spray foam insulation measurements. Return only the JSON object.' }]
-      }]
+      messages: [{ role: 'user', content: contentBlocks }]
     };
 
     const res = await fetch('/api/analyze', {
@@ -255,6 +264,25 @@ async function analyze() {
     btn.disabled = false;
     btn.textContent = 'Analyze with Claude AI →';
   }
+}
+
+async function pdfPagesToImages(file) {
+  const pdfjsLib = window['pdfjs-dist/build/pdf'];
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const images = [];
+  const maxPages = Math.min(pdf.numPages, 6);
+  for (let i = 1; i <= maxPages; i++) {
+    const page = await pdf.getPage(i);
+    const viewport = page.getViewport({ scale: 2.0 });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    images.push(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
+  }
+  return images;
 }
 
 function readFileAsBase64(file) {
