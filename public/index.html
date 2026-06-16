@@ -300,8 +300,8 @@ function readFileAsBase64(file) {
 }
 
 // ── RENDER ──
-function fmt(n)    { return n == null ? '—' : Number(n).toLocaleString(); }
-function fmtD(n)   { return n == null ? '—' : Number(n).toFixed(1); }
+function fmt(n)     { return n == null ? '—' : Number(n).toLocaleString(); }
+function fmtD(n)    { return n == null ? '—' : Number(n).toFixed(1); }
 function fmtMoney(n){ return n == null ? '—' : '$' + Number(n).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); }
 
 function confBadge(c) {
@@ -312,21 +312,51 @@ function confBadge(c) {
 function foamBadge(t) {
   return t === 'closed_cell' ? '<span class="foam-cc">CC</span>' : '<span class="foam-oc">OC</span>';
 }
-function typeLabel(t) {
-  const map = { exterior_wall:'Ext Wall', interior_wall:'Int Wall', roof:'Roof', attic_floor:'Attic Floor', rim_joist:'Rim Joist', crawl_space:'Crawl Space', garage_wall:'Garage', foundation_wall:'Foundation' };
-  return `<span class="type-badge">${map[t] || t || '—'}</span>`;
+
+const CATEGORIES = [
+  { key: 'walls',    label: '🧱 Walls',    types: ['exterior_wall','interior_wall','garage_wall','foundation_wall','rim_joist'] },
+  { key: 'roof',     label: '🏠 Roof',     types: ['roof','roof_deck'] },
+  { key: 'ceiling',  label: '⬆️ Ceiling',  types: ['ceiling','attic_ceiling'] },
+  { key: 'floors',   label: '⬇️ Floors',   types: ['attic_floor','crawl_space','floor','under_floor'] },
+];
+
+function getCategory(type) {
+  for (const cat of CATEGORIES) {
+    if (cat.types.includes(type)) return cat.key;
+  }
+  return 'walls'; // default
 }
 
 function renderDashboard(data) {
   const s = data.summary || {};
+  const allAreas = (data.categories || []).flatMap(c => (c.areas||[]).map(a => ({...a, _cat: c.category})))
+    .concat((data.floors||[]).flatMap(f => (f.areas||[]).map(a => ({...a, _cat: getCategory(a.type)}))));
 
+  // Group into 4 categories
+  const grouped = {};
+  CATEGORIES.forEach(c => { grouped[c.key] = []; });
+  allAreas.forEach(a => {
+    const cat = a._cat || getCategory(a.type);
+    if (grouped[cat]) grouped[cat].push(a); else grouped['walls'].push(a);
+  });
+
+  // Sidebar summary
   document.getElementById('summary-section').style.display = 'block';
+
+  let catBreakdown = '';
+  CATEGORIES.forEach(cat => {
+    const areas = grouped[cat.key];
+    if (!areas.length) return;
+    const bf  = areas.reduce((sum,a) => sum + (a.board_feet||0), 0);
+    const sf  = areas.reduce((sum,a) => sum + (a.net_area_sf||0), 0);
+    catBreakdown += `<div class="stat-row"><span class="stat-label">${cat.label}</span><span class="stat-val">${fmt(Math.round(bf))} BF</span></div>`;
+  });
+
   document.getElementById('summary-content').innerHTML = `
-    <div class="stat-row"><span class="stat-label">Total Net Area</span><span class="stat-val">${fmt(s.total_net_area_sf)} sf</span></div>
-    <div class="stat-row"><span class="stat-label">Total Board Feet</span><span class="stat-val">${fmt(s.total_board_feet)} BF</span></div>
-    <div class="stat-row"><span class="stat-label">Closed Cell BF</span><span class="stat-val">${fmt(s.closed_cell_bf)}</span></div>
-    <div class="stat-row"><span class="stat-label">Open Cell BF</span><span class="stat-val">${fmt(s.open_cell_bf)}</span></div>
+    ${catBreakdown}
     <hr class="stat-divider">
+    <div class="stat-row"><span class="stat-label">Total Board Feet</span><span class="stat-val">${fmt(s.total_board_feet)} BF</span></div>
+    <div class="stat-row"><span class="stat-label">Total Net Area</span><span class="stat-val">${fmt(s.total_net_area_sf)} sf</span></div>
     <div class="stat-row"><span class="stat-label">Material Cost</span><span class="stat-val">${fmtMoney(s.estimated_material_cost)}</span></div>
     <div class="sell-box">
       <div class="sell-label">Estimated Sell Price</div>
@@ -340,12 +370,12 @@ function renderDashboard(data) {
     document.getElementById('warnings-content').innerHTML = flags.map(f => `<div class="warn-item">⚠️ ${f}</div>`).join('');
   }
 
-  const floors = data.floors || [];
+  const totalSurfaces = allAreas.length;
   let html = `
     <div class="proj-info">
       <div>
         <div class="proj-info-name">${data.project_name || 'Unknown Project'}</div>
-        <div class="proj-info-meta">Scale: ${data.scale || 'Not detected'} · ${floors.length} floor${floors.length!==1?'s':''} · ${floors.reduce((a,f)=>(a+(f.areas||[]).length),0)} surfaces</div>
+        <div class="proj-info-meta">Scale: ${data.scale || 'Not detected'} · ${totalSurfaces} surface${totalSurfaces!==1?'s':''}</div>
       </div>
       <div class="proj-info-right">
         <div class="proj-stat"><div class="proj-stat-val">${fmt(s.total_net_area_sf)} sf</div><div class="proj-stat-lab">Net Area</div></div>
@@ -354,15 +384,18 @@ function renderDashboard(data) {
       </div>
     </div>`;
 
-  if (!floors.length) {
+  if (!totalSurfaces) {
     html += `<div class="empty"><div class="empty-icon">🤷</div><div class="empty-title">No measurements found</div><div class="empty-sub">Claude couldn't find clear dimensions. Try a higher-resolution image or a cleaner PDF.</div></div>`;
   } else {
-    floors.forEach(floor => {
-      const areas = floor.areas || [];
-      html += `<div class="floor-header">${floor.name||'Floor'} <span style="color:var(--slate-500);font-weight:400;font-size:10px">${areas.length} surface${areas.length!==1?'s':''}</span></div>`;
+    CATEGORIES.forEach(cat => {
+      const areas = grouped[cat.key];
+      if (!areas.length) return;
+      const catBF = Math.round(areas.reduce((s,a)=>s+(a.board_feet||0),0));
+      const catSF = Math.round(areas.reduce((s,a)=>s+(a.net_area_sf||0),0));
+      html += `<div class="floor-header">${cat.label} <span style="color:var(--slate-500);font-weight:400;font-size:10px">${areas.length} surface${areas.length!==1?'s':''} &nbsp;·&nbsp; ${fmt(catSF)} sf &nbsp;·&nbsp; ${fmt(catBF)} BF</span></div>`;
       html += `<div class="tbl-wrap"><table>
         <thead><tr>
-          <th>Surface</th><th>Type</th>
+          <th>Surface</th><th>Location</th>
           <th>L (ft)</th><th>H (ft)</th>
           <th>Win sf</th><th>Door sf</th>
           <th>Net sf</th><th>Foam</th>
@@ -371,9 +404,10 @@ function renderDashboard(data) {
         </tr></thead><tbody>`;
       areas.forEach(a => {
         const low = (a.confidence||100) < 70;
+        const locLabel = a.floor || a.location || '';
         html += `<tr${low?' class="low-conf"':''}>
           <td><strong>${a.label||'—'}</strong>${low?' <span style="color:#d97706">⚠️</span>':''}</td>
-          <td>${typeLabel(a.type)}</td>
+          <td><span class="type-badge">${locLabel}</span></td>
           <td>${fmtD(a.length_ft)}</td><td>${fmtD(a.height_ft)}</td>
           <td>${fmt(a.window_area_sf)}</td><td>${fmt(a.door_area_sf)}</td>
           <td><strong>${fmt(a.net_area_sf)}</strong></td>
@@ -400,13 +434,14 @@ Schema:
 {
   "project_name": "address or name from plan, or 'Unknown Project'",
   "scale": "drawing scale e.g. '1/4\" = 1\\'-0\"' or 'Not detected'",
-  "floors": [
+  "categories": [
     {
-      "name": "Basement | First Floor | Second Floor | Attic",
+      "category": "walls | roof | ceiling | floors",
       "areas": [
         {
-          "label": "e.g. North Exterior Wall",
-          "type": "exterior_wall|interior_wall|roof|attic_floor|rim_joist|crawl_space|garage_wall|foundation_wall",
+          "label": "descriptive name e.g. North Exterior Wall",
+          "floor": "location e.g. First Floor, Basement, Attic",
+          "type": "exterior_wall|interior_wall|garage_wall|foundation_wall|rim_joist|roof|roof_deck|ceiling|attic_ceiling|attic_floor|crawl_space|floor|under_floor",
           "length_ft": 0,
           "height_ft": 0,
           "window_area_sf": 0,
@@ -432,15 +467,21 @@ Schema:
   }
 }
 
-Rules:
+Category rules:
+- walls: all exterior walls, interior walls, garage walls, foundation walls, rim joists
+- roof: roof deck, roof assembly
+- ceiling: ceiling surfaces sprayed from below (not attic floor)
+- floors: attic floors, crawl space floors, under-floor insulation
+
+Calculation rules:
 - Closed cell: R-6.5/in, $1.00/BF. Open cell: R-3.7/in, $0.44/BF.
 - thickness_in = r_value / r_per_inch. board_feet = net_area_sf x thickness_in.
-- Default R: exterior_wall R-21 CC, roof R-38 CC, attic_floor R-49 OC, rim_joist R-13 CC, crawl_space R-21 CC, garage_wall R-13 CC.
+- Default R: exterior_wall R-21 CC, roof R-38 CC, ceiling R-21 CC, attic_floor R-49 OC, rim_joist R-13 CC, crawl_space R-21 CC, garage_wall R-13 CC.
 - net_area_sf = (length_ft x height_ft) - window_area_sf - door_area_sf.
 - Add 10% waste to board feet. Material cost = BF x price_per_BF.
 - estimated_sell_price = (material + labor) x 1.35 where labor = total_BF/500 x 85.
-- confidence 90-100: clear dimension, 70-89: estimated from context, below 70: guessed.
-- Always return valid JSON even if plan is unclear — estimate with low confidence.`;
+- confidence 90-100: clear readable dimension, 70-89: estimated from context, below 70: guessed.
+- Always return valid JSON even if plan is unclear — use best estimates with low confidence.`;
 </script>
 </body>
 </html>
